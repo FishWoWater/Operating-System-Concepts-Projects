@@ -156,7 +156,7 @@ int main(){
                     res = execvp(pipe_args[0], pipe_args);
                     if(res < 0) { perror("cmd2 execution error!"); exit(1); }
                 }else{
-                    /* for the child process, it will execute the first command */
+                    /* for the parent process, it will execute the first command */
                     /* close stdout */
                     close(1);
                     /* close one port */
