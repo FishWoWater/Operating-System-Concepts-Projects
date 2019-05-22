@@ -1,11 +1,12 @@
-总用量 56
-drwxrwxr-x  3 dreamboy dreamboy  4096 5月  22 20:50 .
+总用量 64
+drwxrwxr-x  3 dreamboy dreamboy  4096 5月  22 20:52 .
 drwxrwxr-x 13 dreamboy dreamboy  4096 5月  22 20:02 ..
 -rw-------  1 dreamboy dreamboy    84 5月  15 20:17 .gdb_history
 -rw-rw-r--  1 dreamboy dreamboy   236 5月  15 20:44 Makefile
--rw-r--r--  1 dreamboy dreamboy     0 5月  22 20:50 output
+-rw-r--r--  1 dreamboy dreamboy     0 5月  22 21:57 output
 drwxrwxr-x  3 dreamboy dreamboy  4096 5月  21 00:20 part2
 -rw-rw-r--  1 dreamboy dreamboy    57 5月  15 20:17 peda-session-simulator.txt
--rwxrwxr-x  1 dreamboy dreamboy 13856 5月  22 20:49 simulator
--rw-rw-r--  1 dreamboy dreamboy  7722 5月  22 20:49 simulator.c
--rw-rw-r--  1 dreamboy dreamboy  7656 5月  22 20:49 simulator.o
+-rw-rw-r--  1 dreamboy dreamboy  4330 5月  22 21:56 README.md
+-rwxrwxr-x  1 dreamboy dreamboy 13808 5月  22 20:51 simulator
+-rw-rw-r--  1 dreamboy dreamboy  7722 5月  22 20:51 simulator.c
+-rw-rw-r--  1 dreamboy dreamboy  7576 5月  22 20:51 simulator.o
