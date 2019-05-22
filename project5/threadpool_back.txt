@@ -1,0 +1,134 @@
+/**
+ * Implementation of thread pool.
+ */
+
+#include <pthread.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <semaphore.h>
+#include "threadpool.h"
+
+#define QUEUE_SIZE 10
+#define NUMBER_OF_THREADS 3
+
+#define TRUE 1
+
+// this represents work that has to be 
+// completed by a thread in the pool
+typedef struct 
+{
+    void (*function)(void *p);
+    void *data;
+} task;
+
+/* data struct for the 
+ * link list */
+typedef struct
+{
+    task work;
+    node *prev;
+    node *next;
+} node;
+
+// the work queue
+task worktodo;
+
+// the worker bee
+pthread_t bee[NUMBER_OF_THREADS];
+sem_t sem;
+
+/* use a bidirectional link list 
+ * to implement the queue */
+node *newNode, *head, *tail, *tmp;
+
+// insert a task into the queue
+// returns 0 if successful or 1 otherwise, 
+int enqueue(task t) 
+{
+    newNode = malloc(sizeof(node));
+    newNode -> work = t;
+    if(head == tail){
+        /* special case */
+        newNode -> prev = head;
+        newNode -> next = tail;
+        head -> next = newNode;
+        tail -> prev = newNode;
+    }else{
+       tmp = head -> next;
+       newNode -> next = tmp;
+       tmp -> prev = newNode;
+       newNode -> prev = head;
+       head -> next = newNode;
+    }
+    return 0;
+}
+
+// remove a task from the queue
+task dequeue() 
+{
+    if(head == tail){
+        printf("Error! The queue is empty!\n");
+        exit(-1);
+    }else{
+        tmp = tail -> prev;
+        tmp -> prev -> next = tail;
+        tail -> prev = tmp -> prev;
+    }
+    worktodo = tmp -> work;
+    return worktodo;
+}
+
+// the worker thread in the thread pool
+void *worker(void *param)
+{
+    sem_wait(&sem);
+    worktodo = dequeue();
+    // execute the task
+    execute(worktodo.function, worktodo.data);
+    sem_post(&sem);
+    pthread_exit(0);
+}
+
+/**
+ * Executes the task provided to the thread pool
+ */
+void execute(void (*somefunction)(void *p), void *p)
+{
+    (*somefunction)(p);
+}
+
+/**
+ * Submits work to the pool.
+ */
+int pool_submit(void (*somefunction)(void *p), void *p)
+{
+    worktodo.function = somefunction;
+    worktodo.data = p;
+    enqueue(worktodo);
+    printf("submitted work successfully!\n");
+
+    return 0;
+}
+
+// initialize the thread pool
+void pool_init(void)
+{
+    /* allocate the memory space for the head/tail */
+    head = malloc(sizeof(node));
+    /* set the tail = head */
+    tail = head;
+    /* initialize the semaphore */
+    sem_init(&sem, 0, NUMBER_OF_THREADS);
+    pthread_create(&bee,NULL,worker,NULL);
+}
+
+// shutdown the thread pool
+void pool_shutdown(void)
+{
+    for(int i=0;i < NUMBER_OF_THREADS;i++)
+        pthread_join(bee[i],NULL);
+    /* destroy the semaphore */
+    sem_destroy(&sem);
+    free(head);
+    free(tail);
+}
