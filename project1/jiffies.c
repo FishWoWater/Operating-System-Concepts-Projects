@@ -16,9 +16,7 @@
 #include <linux/uaccess.h>
 
 #define BUFFER_SIZE 128
-#define PROC_NAME "seconds"
-
-static long unsigned int start;
+#define PROC_NAME "jiffies"
 
 static ssize_t proc_read(struct file *file, char __user *usr_buf, size_t count, loff_t *pos);
 
@@ -31,7 +29,6 @@ static int proc_init(void)
 {
     proc_create(PROC_NAME, 0666, NULL, &proc_ops);
     printk(KERN_INFO "/proc/%s created\n", PROC_NAME);
-    start = jiffies;
 
     return 0;
 }
@@ -56,7 +53,7 @@ static ssize_t proc_read(struct file *file, char __user *usr_buf, size_t count, 
     
     completed = 1;
 
-    rv = sprintf(buffer, "%lus has eplased since creation.\n", (jiffies-start)/HZ);
+    rv = sprintf(buffer, "Currently jiffies value is:%lu\n", jiffies);
     
     copy_to_user(usr_buf, buffer, rv);
     return rv;
