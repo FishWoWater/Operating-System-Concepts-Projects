@@ -1,0 +1,138 @@
+\documentclass[12pt]{extarticle}
+%Some packages I commonly use.
+\usepackage[english]{babel}
+\usepackage{graphicx}
+\usepackage{framed}
+\usepackage[normalem]{ulem}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{enumerate}
+\usepackage[utf8]{inputenc}
+\usepackage{listings}
+\usepackage[top=1 in,bottom=1in, left=1 in, right=1 in]{geometry}
+\usepackage{color}
+\usepackage{float}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+%A bunch of definitions that make my life easier
+\newcommand{\matlab}{{\sc Matlab} }
+\newcommand{\cvec}[1]{{\mathbf #1}}
+\newcommand{\rvec}[1]{\vec{\mathbf #1}}
+\newcommand{\ihat}{\hat{\textbf{\i}}}
+\newcommand{\jhat}{\hat{\textbf{\j}}}
+\newcommand{\khat}{\hat{\textbf{k}}}
+\newcommand{\minor}{{\rm minor}}
+\newcommand{\trace}{{\rm trace}}
+\newcommand{\spn}{{\rm Span}}
+\newcommand{\rem}{{\rm rem}}
+\newcommand{\ran}{{\rm range}}
+\newcommand{\range}{{\rm range}}
+\newcommand{\mdiv}{{\rm div}}
+\newcommand{\proj}{{\rm proj}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\<}{\langle}
+\renewcommand{\>}{\rangle}
+\renewcommand{\emptyset}{\varnothing}
+\newcommand{\attn}[1]{\textbf{#1}}
+\theoremstyle{definition}
+\newtheorem{theorem}{Theorem}
+\newtheorem{corollary}{Corollary}
+\newtheorem*{definition}{Definition}
+\newtheorem*{example}{Example}
+\newtheorem*{note}{Note}
+\newtheorem{exercise}{Exercise}
+\newcommand{\bproof}{\bigskip {\bf Proof. }}
+\newcommand{\eproof}{\hfill\qedsymbol}
+\newcommand{\Disp}{\displaystyle}
+\newcommand{\qe}{\hfill\(\bigtriangledown\)}
+\setlength{\columnseprule}{1 pt}
+
+\lstset{frame=tb,
+	language=C,
+	aboveskip=3mm,
+	belowskip=3mm,
+	showstringspaces=false,
+	columns=flexible,
+	basicstyle={\small\ttfamily},
+	numbers=none,
+	numberstyle=\tiny\color{gray},
+	keywordstyle=\color{blue},
+	commentstyle=\color{dkgreen},
+	stringstyle=\color{mauve},
+	breaklines=true,
+	breakatwhitespace=true,
+	tabsize=3
+}
+
+\title{CS307 Project6: Banker's Algorithm}
+\author{Junjie Wang 517021910093}
+
+\begin{document}
+	\maketitle
+	\section{Programming Thoughts}
+	Banker's algorithm is widely used to detect whether the state of a system is safe, then preventing deadlocks by denying requests which will cause a safe state into an unsafe state. \\
+	We have to maintain 4 arrays(maximum, allocation, need, available) through the whole process. These 4 arrays will be used to decide whether we can find a sequence to execute all the processes(if such sequence can be found, we claim that the system is safe, otherwise it's unsafe). Note that once a process is finished, we release all the resources allocated to this process and update the 4 arrays accordingly.\\
+	The stratey here to handle the request of resources is: assume that we accept the request(in my implementation, I copy the 4 arrays as backup, actually this is not very efficient), then try to find a sequence to execute all the processes. If we can find, we turn back to accept the request, otherwise we deny it. \\
+	The strategy the handle the release request is much simpler, we only need to ensure that the release request does not exceed the process's allocation. Then we can update the 4 arrays accordingly.
+	\section{Execution Results And Snapshots}
+	As we can see in \ref{fig1}, initialliy the allocation array is empty. If we use input (10,5,7,8)(claiming the maximum amout of the resources), since the maximum array of the fifth customer is (5,6,7,5), we can not find a sequence to satisfy all the customers, indicating that current state is unsafe. So the coming request will be denied for sure.
+	\begin{figure}[H]
+	\centering 
+	\includegraphics[width=1.0\textwidth]{../imgs/6-1.png}
+	\caption{attempt 1}
+	\label{fig1}
+	\end{figure}
+	Next we use a much larger input, (100, 100, 100, 100) for 4 types of resources. This time we can see in \ref{fig2} the resources are allocated successfully. And once we release the resources, the arrays are all restored.
+	\begin{figure}[H]
+		\centering 
+		\includegraphics[width=1.0\textwidth]{../imgs/6-2.png}
+		\caption{attempt 2}
+		\label{fig2}
+	\end{figure}\begin{figure}[H]
+	\centering 
+	\includegraphics[width=0.6\textwidth]{../imgs/6-3.png}
+	\caption{attempt 2}
+	\label{fig3}
+\end{figure}
+	\section{Code Explanation}
+	The core logic is to how to check whether the system will be in safe state. The idea is to use a $checkSafeWrapper()$(where the 4 arrays are restored for later restoration) function to call $checkSafe()$ function, which will determine whether the system will be in safe state.
+	\begin{lstlisting}
+		int checkSafe(int *finished){
+			int i;
+			for(i=0;i<num_customers && finished[i];i++) ;
+			if(i == num_customers)  return 1;
+			
+			/* currently not all the values in finished array are 1 
+			   if we can not find a customer which can be satisfied, we fail
+			   i.e. the system is unsafe */
+			int customerIndex = findSomeCustomer(finished);
+			if(customerIndex == -1)   return 0;
+			else{
+			releaseResources(customerIndex, allocation[customerIndex]);
+			finished[customerIndex] = 1;
+			checkSafe(finished);
+			}
+		}
+		
+		/* find some customer who can be sastisfied
+		   the logic is to compare the need array and available array */
+		int findSomeCustomer(int *finished){
+			int i, j;
+			for(i=0;i<num_customers;i++){
+			for(j=0;j<num_resources;j++){
+			if(need[i][j] > available[j])   break;
+			}
+			if(j == num_resources && !finished[i])  return i;
+			}
+			return -1;
+		}
+	\end{lstlisting}
+\end{document}
