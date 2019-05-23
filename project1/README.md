@@ -83,7 +83,7 @@ static void __exit simple_exit(void){
 * `sudo rmmod simple`(remove the kernel module)
 * Output is as follows(I add some extra logic here and you can refer to the source code)
 
-<center>![1-1](../imgs/1-1.png)</center>
+![1-1](../imgs/1-1.png)
 
 ### Part B: The /proc file system
 > &emsp;&emsp;The /proc file system is a “pseudo” file system that exists only in kernel memory and is used primarily for querying various kernel and per-process statistics. Here I only show how to use HZ and jiffies to get the time interval, source code is available at project1/seconds.c
@@ -163,4 +163,4 @@ MODULE_AUTHOR("Junjie Wang");
 ```
 &emsp;&emsp;Output is as follows:
 
-<center>![1-2](../imgs/1-2.png)</center>
+![1-2](../imgs/1-2.png)
