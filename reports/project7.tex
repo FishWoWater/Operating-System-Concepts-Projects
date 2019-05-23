@@ -1,0 +1,213 @@
+\documentclass[12pt]{extarticle}
+%Some packages I commonly use.
+\usepackage[english]{babel}
+\usepackage{graphicx}
+\usepackage{framed}
+\usepackage[normalem]{ulem}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{enumerate}
+\usepackage[utf8]{inputenc}
+\usepackage{listings}
+\usepackage[top=1 in,bottom=1in, left=1 in, right=1 in]{geometry}
+\usepackage{color}
+\usepackage{float}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+%A bunch of definitions that make my life easier
+\newcommand{\matlab}{{\sc Matlab} }
+\newcommand{\cvec}[1]{{\mathbf #1}}
+\newcommand{\rvec}[1]{\vec{\mathbf #1}}
+\newcommand{\ihat}{\hat{\textbf{\i}}}
+\newcommand{\jhat}{\hat{\textbf{\j}}}
+\newcommand{\khat}{\hat{\textbf{k}}}
+\newcommand{\minor}{{\rm minor}}
+\newcommand{\trace}{{\rm trace}}
+\newcommand{\spn}{{\rm Span}}
+\newcommand{\rem}{{\rm rem}}
+\newcommand{\ran}{{\rm range}}
+\newcommand{\range}{{\rm range}}
+\newcommand{\mdiv}{{\rm div}}
+\newcommand{\proj}{{\rm proj}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\<}{\langle}
+\renewcommand{\>}{\rangle}
+\renewcommand{\emptyset}{\varnothing}
+\newcommand{\attn}[1]{\textbf{#1}}
+\theoremstyle{definition}
+\newtheorem{theorem}{Theorem}
+\newtheorem{corollary}{Corollary}
+\newtheorem*{definition}{Definition}
+\newtheorem*{example}{Example}
+\newtheorem*{note}{Note}
+\newtheorem{exercise}{Exercise}
+\newcommand{\bproof}{\bigskip {\bf Proof. }}
+\newcommand{\eproof}{\hfill\qedsymbol}
+\newcommand{\Disp}{\displaystyle}
+\newcommand{\qe}{\hfill\(\bigtriangledown\)}
+\setlength{\columnseprule}{1 pt}
+
+\lstset{frame=tb,
+	language=C,
+	aboveskip=3mm,
+	belowskip=3mm,
+	showstringspaces=false,
+	columns=flexible,
+	basicstyle={\small\ttfamily},
+	numbers=none,
+	numberstyle=\tiny\color{gray},
+	keywordstyle=\color{blue},
+	commentstyle=\color{dkgreen},
+	stringstyle=\color{mauve},
+	breaklines=true,
+	breakatwhitespace=true,
+	tabsize=3
+}
+
+\title{CS307 Project7: Contiguous Memory Allocation}
+\author{Junjie Wang 517021910093}
+
+\begin{document}
+	\maketitle
+	\section{Programming Thoughts}
+	First store the allocation as blocks into double link list(with head and tail), and all of our operations are done on these blocks. \\
+	\textbf{Hit strategy:} three hit strategies often used are: best/first/worst hit strategy. The first hit is the easiest to implement, where we simply move along the link list and stop once we find one block meeting our requirement. For best/worst strategy, we need to traverse the whole double link list. \\
+	\textbf{Handle Memory Request:} When we use one of strategies and find a block to allocate to the process. What we need to do is split the block. One part of the block will be allocated to the process, and the other part will be unused. \\
+	\textbf{Handle Memory Release:} When receiving the memory releasing request, we traverse the link list and free the blocks whose "name" is the same as the name given. Note that once the block becomes unused once released, and we have to check whether we can merge it with its previous block and following block. \\
+	\textbf{Compaction:} After a number of iterations of memory allocation and memory freeing, these may be many holes in our memory, which will reduce the memory utilization rate. Solution here is to use memory compaction strategy, which will merge all the holes into only one large hole on one side of the memory, and place all the processes on the other side. I offer 2 different implementations in my code. One is naive and simply re-allocate a memory space whose size is equal to our original one. Then process the processes and unused memory blocks according to the original one. This is probably \textbf{not what happens in real-world scenerio} because of limitation of memory space. So I offer the second implementation, which shuffles the unused memory forward as it moves along the link list(this can be done by copying the allocated block backward, byte by byte, from start to end). 
+	\section{Execution Results And Snapshots}
+	We first request 4000 bytes for the process P0 using best hit strategy. Then we request another 4000 bytes for process P0 using worst hit. Now P0 has 8000 bytes memory space, and once we release all the memory which belongs to P0, the expected output should be an completely unused block. As we can see in \ref{fig1}, the real output is correct.\\
+	Then we test the compaction logic. The idea is to request 4000 bytes for P0 first and then P1. Then release the memory which belongs to P0. As we can see in \ref{fig1}, the unused memory is shuffled towards one side of the memory.
+	\begin{figure}[H]
+	\centering 
+	\includegraphics[width=1.0\textwidth]{../imgs/7-1.png}
+	\caption{first}
+	\label{fig1}
+	\end{figure} 
+	\section{Code Explanation}
+	First we define some data structures which will be used to represent the memory block and form the link list. Listed as follows:
+	\begin{lstlisting}
+	/* define the struct to represent the allocation and hole */
+	typedef struct{
+		/* type 1: allocation 
+		* type 0: hole(namely unused) */
+		int type;
+		int start;
+		int end;
+		/* the process id */
+		char *name;
+	} Block;
+	
+	/* use double link list */
+	struct node{
+		Block *block;
+		struct node *prev;
+		struct node *next;
+	};
+	\end{lstlisting}
+	Then we show the code of splitting the node(which will be used in handling memory requests)
+	\begin{lstlisting}
+	void splitNode(int size, char *name, struct node *oldNode){
+		block = oldNode -> block;
+		if(block -> end - block -> start == size){
+		/* if we have size == end - start, that's perfect */
+		strcpy(block->name, name);
+		block->type = 1;
+		}else{
+		/* else we have to split the node */
+		tmp_block = malloc(sizeof(Block));
+		newNode = malloc(sizeof(struct node));
+		tmp_block -> start = block -> start;
+		tmp_block -> end = block -> start + size;
+		block -> start = block -> start + size;
+		/* since the first one is the allocation 
+		* its type = 1 */
+		tmp_block -> type = 1;
+		/* if use strcpy() function, 
+		* don't forget tmp_block -> name = malloc(...) */
+		tmp_block -> name = name;
+		newNode -> block = tmp_block;
+		oldNode -> prev -> next = newNode;
+		newNode -> prev = oldNode -> prev;
+		newNode -> next = oldNode;
+		oldNode -> prev = newNode;
+		}   
+	}
+	\end{lstlisting}
+	Then we show the logic to merge holes(used when releasing memory space)
+	\begin{lstlisting}
+	/* check whether we can merge the node with 
+	* its previous one and its following one */
+	void mergeHole(struct node *target){
+		newNode = malloc(sizeof(struct node));
+		block = malloc(sizeof(Block));
+		if(target->prev != head && target->prev->block->type == 0){
+		/* merge current one with previous one */
+		block -> start = target -> prev -> block -> start;
+		block -> end = target -> block -> end;
+		block -> type = 0;
+		newNode -> block = block;
+		target -> prev -> prev -> next = newNode;
+		newNode -> prev = target -> prev -> prev;
+		newNode -> next = target -> next;
+		target -> next -> prev = newNode;
+		target = NULL;
+		}
+		if(target == NULL)  { target = newNode; newNode = malloc(sizeof(struct node)); }
+		
+		if(target->next != tail && target->next->block->type == 0){
+		/* merge current one with following one */
+		block -> start = target -> block -> start;
+		block -> end = target -> next -> block -> end;
+		block -> type = 0;
+		newNode -> block = block;
+		target -> next -> next -> prev = newNode;
+		newNode -> next = target -> next -> next;
+		target -> prev -> next = newNode;
+		newNode -> prev = target -> prev;
+		}
+	}
+	\end{lstlisting}
+	At last we show the logic of compaction(the \textbf{shuffle} method).
+	\begin{lstlisting}
+	/* As we traverse the link list, whenever we meet 
+	* type 0 block, we shuffle that forward. Finally we 
+	* will have all the holes on one side of memory. */
+	void handleCompactShuffle(){
+		struct node *p = head->next, *prev;
+		while(p != tail){
+			/* only when we meet unused */
+			if(p->block->type == 0 && p->prev != head){
+			/* since we merge the holes when 
+			* allocation, the previous one must
+			* be allocated and we can just exchange */
+			prev = p->prev;
+			/* actually this operation may be implemented as memory copy */
+			prev->block->start += (p->block->end - p->block->start);
+			prev->block->end += (p->block->end - p->block->start);
+			p->block->start -= (prev->block->end - prev->block->start);
+			p->block->end -= (prev->block->end - prev->block->start);
+			/* now exchange these two */
+			prev->prev->next = p;
+			p->prev = prev->prev;
+			p->next->prev = prev;
+			prev->next = p->next;
+			p -> next = prev;
+			/* merge the the holes */
+			mergeHole(p);
+			/* as we shift p ahead , add one more p -> next step */
+			p = p->next ;
+			}
+		p = p->next;
+		}
+	}
+	\end{lstlisting}
+\end{document}
