@@ -1,2 +1,7 @@
 *.o
 peda*
+*.aux
+*.log
+*.gz
+*.ko
+*.cmd
