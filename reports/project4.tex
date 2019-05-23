@@ -1,0 +1,199 @@
+\documentclass[12pt]{extarticle}
+%Some packages I commonly use.
+\usepackage[english]{babel}
+\usepackage{graphicx}
+\usepackage{framed}
+\usepackage[normalem]{ulem}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{enumerate}
+\usepackage[utf8]{inputenc}
+\usepackage{listings}
+\usepackage[top=1 in,bottom=1in, left=1 in, right=1 in]{geometry}
+\usepackage{color}
+\usepackage{float}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+%A bunch of definitions that make my life easier
+\newcommand{\matlab}{{\sc Matlab} }
+\newcommand{\cvec}[1]{{\mathbf #1}}
+\newcommand{\rvec}[1]{\vec{\mathbf #1}}
+\newcommand{\ihat}{\hat{\textbf{\i}}}
+\newcommand{\jhat}{\hat{\textbf{\j}}}
+\newcommand{\khat}{\hat{\textbf{k}}}
+\newcommand{\minor}{{\rm minor}}
+\newcommand{\trace}{{\rm trace}}
+\newcommand{\spn}{{\rm Span}}
+\newcommand{\rem}{{\rm rem}}
+\newcommand{\ran}{{\rm range}}
+\newcommand{\range}{{\rm range}}
+\newcommand{\mdiv}{{\rm div}}
+\newcommand{\proj}{{\rm proj}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\<}{\langle}
+\renewcommand{\>}{\rangle}
+\renewcommand{\emptyset}{\varnothing}
+\newcommand{\attn}[1]{\textbf{#1}}
+\theoremstyle{definition}
+\newtheorem{theorem}{Theorem}
+\newtheorem{corollary}{Corollary}
+\newtheorem*{definition}{Definition}
+\newtheorem*{example}{Example}
+\newtheorem*{note}{Note}
+\newtheorem{exercise}{Exercise}
+\newcommand{\bproof}{\bigskip {\bf Proof. }}
+\newcommand{\eproof}{\hfill\qedsymbol}
+\newcommand{\Disp}{\displaystyle}
+\newcommand{\qe}{\hfill\(\bigtriangledown\)}
+\setlength{\columnseprule}{1 pt}
+
+\lstset{frame=tb,
+	language=C,
+	aboveskip=3mm,
+	belowskip=3mm,
+	showstringspaces=false,
+	columns=flexible,
+	basicstyle={\small\ttfamily},
+	numbers=none,
+	numberstyle=\tiny\color{gray},
+	keywordstyle=\color{blue},
+	commentstyle=\color{dkgreen},
+	stringstyle=\color{mauve},
+	breaklines=true,
+	breakatwhitespace=true,
+	tabsize=3
+}
+
+\title{CS307 Project3: Multi-threaded Sorting Application \& Fork-Join Sorting Application}
+\author{Junjie Wang 517021910093}
+
+\begin{document}
+	\maketitle
+	\section{Programming Thoughts}
+	The main logic here is to use the link list to store all the tasks first and then implement different algorithms according to their own conditions. A point that worths attention here is when we construct the link list from the input file(schedule.txt), the task with larger id will be closer to the head. So usually we need to locate to the tail of the link list first.\\
+	\textbf{FCFS}: Quite easy. Simply move to the tail of the link list and run the task at that place. \\
+	\textbf{SJF}: Each time we traverse the link list, we find the task with the minumum burst time, then running that task. \\
+	\textbf{PRIORITY}: Each time we traverse the link list, we find the task with the largest priority number(higher priority according to the rule) and execute that task. \\
+	\textbf{ROUND ROBIN(RR)}: First we reverse the chain to make tasks with smaller id closer to the head. Then each time we traverse the chain, we check whether the remaining burst time of a task is smaller than the time quantum. If yes, we execute that job with all its remaining burst time and remove that job from the new link list.If no, we execute that task for a slice of time quantum. \\
+	\textbf{PRIORITY ROUND ROBIN}: This is probably the hardest part of these five algorithms. First we also reverse the link list. Then each time we traverse the new link list, we find the tasks with the maximum priority number and record how many tasks have this maximum priority number. If more than one, we use round robin strategy among them. If exactly one, we execute that one task and remove it from the link list.
+	\section{Execution Results And Snapshots}
+	The execution results of these five algorithms are listed as follows:
+	\begin{figure}[H]
+	\centering 
+	\includegraphics[width=1.0\textwidth]{../imgs/4-1.png}
+	\caption{FCFS}
+	\end{figure}
+	\begin{figure}[H]
+		\centering 
+		\includegraphics[width=1.0\textwidth]{../imgs/4-2.png}
+		\caption{SJF}
+	\end{figure}
+	\begin{figure}[H]
+		\centering 
+		\includegraphics[width=1.0\textwidth]{../imgs/4-4.png}
+		\caption{Priority}
+	\end{figure}
+	\begin{figure}[H]
+		\centering 
+		\includegraphics[width=1.0\textwidth]{../imgs/4-3.png}
+		\caption{Round Robin}
+	\end{figure}
+	\begin{figure}[H]
+		\centering 
+		\includegraphics[width=1.0\textwidth]{../imgs/4-5.png}
+		\caption{Priority Round Robin}
+	\end{figure}
+	
+	\section{Code Explanation} 
+	For brevity here I only show the implementation of the priority round robin. First we reverse the link list and use the headNew pointer we get to implement the core logic.
+	\begin{lstlisting}
+	void schedule(){
+	/* implement the priority round robin schedule algorithm 
+	* first reverse the list */
+	struct node **headNew = malloc(sizeof(struct node *));
+	/* must maually set it to NULL */
+	*headNew = NULL;
+	
+	Task *task = malloc(sizeof(Task));
+	struct node *newNode;
+	struct node **p = malloc(sizeof(struct node *));
+	while((*head)->next!=NULL){
+	task = (*head) -> task;
+	newNode = malloc(sizeof(struct node));
+	newNode -> task = task;
+	newNode -> next = *headNew;
+	*headNew = newNode;
+	*head = (*head)-> next;
+	}
+	task = (*head) -> task;
+	newNode = malloc(sizeof(struct node));
+	newNode -> task = task;
+	newNode -> next = *headNew;
+	*headNew = newNode;
+	
+	/* implement the priority RR based on the headNew 
+	* first use an array to store the priority counts */
+	*p = *headNew;
+	int counts[MAX_PRIORITY+1], i;
+	for(i=0;i<=MAX_PRIORITY;i++) counts[i] = 0;
+	while((*p)->next != NULL){
+	task = (*p) -> task;
+	counts[task->priority]++;
+	*p = (*p) -> next;
+	}
+	
+	i = MAX_PRIORITY;
+	while(1){
+	for(;counts[i] == 0 && i>0; i--)   ;
+	if(i == 0)  break;
+	
+	if(counts[i] == 1){
+	/* with only one task, we just execute it */
+	*p = *headNew;
+	while((*p)->next != NULL){
+	if((*p) -> task -> priority == i){
+	run((*p)->task, (*p)->task->burst);
+	delete(headNew, (*p)->task);
+	break;
+	}
+	*p = (*p) -> next;
+	}
+	counts[i] = 0;
+	}else{
+	/* with more than one task, we use the round robin */
+	*p = *headNew;
+	while(counts[i]>0){
+	if((*p)->task->priority == i){
+	task = (*p) -> task;
+	if(task->burst <= RR_TIME){
+	/* with time less than the limit */
+	run(task, task->burst);
+	/* move on */
+	delete(headNew, task);
+	counts[i]--;
+	}else{
+	/* with time more than the Q */
+	run(task, RR_TIME);
+	task->burst -= RR_TIME;
+	}
+	}
+	if((*p)->next == NULL)  *p = *headNew;
+	else *p = (*p) -> next;
+	}
+	}
+	}
+	free(newNode);
+	free(headNew);
+	free(p);
+	free(task);
+	}
+	\end{lstlisting}
+\end{document}
