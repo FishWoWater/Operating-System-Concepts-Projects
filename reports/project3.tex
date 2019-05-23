@@ -1,0 +1,170 @@
+\documentclass[12pt]{extarticle}
+%Some packages I commonly use.
+\usepackage[english]{babel}
+\usepackage{graphicx}
+\usepackage{framed}
+\usepackage[normalem]{ulem}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{enumerate}
+\usepackage[utf8]{inputenc}
+\usepackage{listings}
+\usepackage[top=1 in,bottom=1in, left=1 in, right=1 in]{geometry}
+\usepackage{color}
+\usepackage{float}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+%A bunch of definitions that make my life easier
+\newcommand{\matlab}{{\sc Matlab} }
+\newcommand{\cvec}[1]{{\mathbf #1}}
+\newcommand{\rvec}[1]{\vec{\mathbf #1}}
+\newcommand{\ihat}{\hat{\textbf{\i}}}
+\newcommand{\jhat}{\hat{\textbf{\j}}}
+\newcommand{\khat}{\hat{\textbf{k}}}
+\newcommand{\minor}{{\rm minor}}
+\newcommand{\trace}{{\rm trace}}
+\newcommand{\spn}{{\rm Span}}
+\newcommand{\rem}{{\rm rem}}
+\newcommand{\ran}{{\rm range}}
+\newcommand{\range}{{\rm range}}
+\newcommand{\mdiv}{{\rm div}}
+\newcommand{\proj}{{\rm proj}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\<}{\langle}
+\renewcommand{\>}{\rangle}
+\renewcommand{\emptyset}{\varnothing}
+\newcommand{\attn}[1]{\textbf{#1}}
+\theoremstyle{definition}
+\newtheorem{theorem}{Theorem}
+\newtheorem{corollary}{Corollary}
+\newtheorem*{definition}{Definition}
+\newtheorem*{example}{Example}
+\newtheorem*{note}{Note}
+\newtheorem{exercise}{Exercise}
+\newcommand{\bproof}{\bigskip {\bf Proof. }}
+\newcommand{\eproof}{\hfill\qedsymbol}
+\newcommand{\Disp}{\displaystyle}
+\newcommand{\qe}{\hfill\(\bigtriangledown\)}
+\setlength{\columnseprule}{1 pt}
+
+\lstset{frame=tb,
+	language=C,
+	aboveskip=3mm,
+	belowskip=3mm,
+	showstringspaces=false,
+	columns=flexible,
+	basicstyle={\small\ttfamily},
+	numbers=none,
+	numberstyle=\tiny\color{gray},
+	keywordstyle=\color{blue},
+	commentstyle=\color{dkgreen},
+	stringstyle=\color{mauve},
+	breaklines=true,
+	breakatwhitespace=true,
+	tabsize=3
+}
+
+\title{CS307 Project3: Multi-threaded Sorting Application \& Fork-Join Sorting Application}
+\author{Junjie Wang 517021910093}
+
+\begin{document}
+	\maketitle 
+	\section{Programming Thoughts}
+	\subsection{Part1: Multi-threaded Sorting}
+	In this part we are going to split a list into two halves and create sort threads to sort these two halves. Then we need to use merge thread to merge these two halves. This idea is a bit similiar to the mergeSort algorithm. Another thing worth attention is that to pass the parameters to the threads, we better define a \textbf{struct}(in this example, consists of start idx and end idx).
+	\subsection{Part2: Fork-Join Sorting}
+	In this part we have to implement quickSort and mergeSort algorithms using Java multi-threading APIs. Both algorithms here consist of the \textbf{dividing stage}(where we use new threads to accomplish the sorting of two halves.) and \textbf{conquering stage}(where we set a threshold, smaller than we will simply use sorting algorithm like insertionSort.)
+	\section{Execution Results And Snapshots}
+	The execution results are as follows:
+	\begin{figure}[H]
+	\centering 
+	\includegraphics[width=1.0\textwidth]{../imgs/3-1.png}
+	\caption{Multi-threaded Sorting}
+	\end{figure} 
+	\begin{figure}[H]
+	\centering 
+	\includegraphics[width=1.0\textwidth]{../imgs/3-2.png}
+	\caption{Multi-threaded Sorting}
+	\end{figure} 
+	\section{Code Explanation}
+	First we show the parameters passing for the first part.
+	\begin{lstlisting}
+	/* for multiple arguments to be passed 
+	* we have to define a struct */
+	typedef struct _param{
+		int start;
+		int end;
+	} funcParam;
+	...
+	/* setting the parameters */
+	params[0].start = 0;    params[0].end = mid; 
+	pthread_attr_init(&attr[0]);
+	pthread_create(&tid[0], &attr[0], sortThread, &params[0]);
+	...
+	/* getting the parameters by type conversion 
+	   and code for the sorting thread */
+	void *sortThread(void *param){
+		funcParam arg = *(funcParam *)param;
+		int start = arg.start, end = arg.end;
+		int min, tmp, idx;
+		for(int i=start;i<end;i++){
+			min = in_arr[i];
+			idx = i;
+			for(int j=i;j<end;j++){
+				if(in_arr[j] < min){
+				min = in_arr[j];
+				idx = j;
+			}
+			tmp = in_arr[i];
+		in_arr[i] = in_arr[idx];
+		in_arr[idx] = tmp;
+		}
+		}
+	}
+	\end{lstlisting}
+	Then we show the \textbf{divide} stage of both quickSort and mergeSort algorithms in Java.
+	\begin{lstlisting}
+	/* divide stage for the quickSort algorithm */
+	int low = begin, high = end;
+	int val = array[low];
+	do{
+	while(low < high && array[high] >= val) high--;
+	if(low < high)  { array[low] = array[high]; low++;}
+	while(low < high && array[low] <= val)  low++;
+	if(low < high) { array[high] = array[low];high--; }
+	}while(low!=high);
+	
+	array[low] = val;
+	
+	/* from the place we put val */
+	int mid = low + 1;
+	quickSortTask left = new quickSortTask(begin, mid - 1, array);
+	quickSortTask right = new quickSortTask(mid + 1, end, array);
+	
+	/* create new threads to accomplish the sorting of the two halves */
+	left.fork();
+	right.fork();
+	
+	/* wait until the threads exit */
+	left.join();
+	right.join();
+	
+	/* divide stage for the mergeSort, much simpler*/
+	int mid = (begin + end) / 2;
+	mergeSortTask left = new mergeSortTask(begin, mid, array);
+	mergeSortTask right = new mergeSortTask(mid + 1, end, array);
+	left.fork();
+	right.fork();
+	left.join();
+	right.join();
+	\end{lstlisting}
+	
+\end{document}
