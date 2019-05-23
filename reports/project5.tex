@@ -1,0 +1,151 @@
+\documentclass[12pt]{extarticle}
+%Some packages I commonly use.
+\usepackage[english]{babel}
+\usepackage{graphicx}
+\usepackage{framed}
+\usepackage[normalem]{ulem}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{enumerate}
+\usepackage[utf8]{inputenc}
+\usepackage{listings}
+\usepackage[top=1 in,bottom=1in, left=1 in, right=1 in]{geometry}
+\usepackage{color}
+\usepackage{float}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+%A bunch of definitions that make my life easier
+\newcommand{\matlab}{{\sc Matlab} }
+\newcommand{\cvec}[1]{{\mathbf #1}}
+\newcommand{\rvec}[1]{\vec{\mathbf #1}}
+\newcommand{\ihat}{\hat{\textbf{\i}}}
+\newcommand{\jhat}{\hat{\textbf{\j}}}
+\newcommand{\khat}{\hat{\textbf{k}}}
+\newcommand{\minor}{{\rm minor}}
+\newcommand{\trace}{{\rm trace}}
+\newcommand{\spn}{{\rm Span}}
+\newcommand{\rem}{{\rm rem}}
+\newcommand{\ran}{{\rm range}}
+\newcommand{\range}{{\rm range}}
+\newcommand{\mdiv}{{\rm div}}
+\newcommand{\proj}{{\rm proj}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\<}{\langle}
+\renewcommand{\>}{\rangle}
+\renewcommand{\emptyset}{\varnothing}
+\newcommand{\attn}[1]{\textbf{#1}}
+\theoremstyle{definition}
+\newtheorem{theorem}{Theorem}
+\newtheorem{corollary}{Corollary}
+\newtheorem*{definition}{Definition}
+\newtheorem*{example}{Example}
+\newtheorem*{note}{Note}
+\newtheorem{exercise}{Exercise}
+\newcommand{\bproof}{\bigskip {\bf Proof. }}
+\newcommand{\eproof}{\hfill\qedsymbol}
+\newcommand{\Disp}{\displaystyle}
+\newcommand{\qe}{\hfill\(\bigtriangledown\)}
+\setlength{\columnseprule}{1 pt}
+
+\lstset{frame=tb,
+	language=C,
+	aboveskip=3mm,
+	belowskip=3mm,
+	showstringspaces=false,
+	columns=flexible,
+	basicstyle={\small\ttfamily},
+	numbers=none,
+	numberstyle=\tiny\color{gray},
+	keywordstyle=\color{blue},
+	commentstyle=\color{dkgreen},
+	stringstyle=\color{mauve},
+	breaklines=true,
+	breakatwhitespace=true,
+	tabsize=3
+}
+
+\title{CS307 Project5: Designing A Thread-Pool \& Producer-Consumer Algorithm}
+\author{Junjie Wang 517021910093}
+
+\begin{document}
+	\maketitle
+	\section{Programming Thoughts}
+	\subsection{Part1: Designing A Thread-Pool}
+	The main advantage of a thread pool is that it saves the time of creating new threads(it will only create all the threads once at the beginning). In the implementation logic, we need to organize the tasks into a queue(with FIFO property) and then submit the tasks to the thread pool. Once receiving the signal(using semaphores here), an available thread will take over a task from the queue and start execution. Once it finishes execution, it will wait in the pool for new tasks to come. \\
+	An important part of this part is using semaphores to inform the threads of coming tasks and using mutex to prevent simultaneous operations on the task queue.
+	\subsection{Part2: Producer-Consumer Algorithm}
+	In this part we will create a number of producers and consumers. Producers will sleep for random time and then insert a random item into the buffer. Consumers will sleep for random time and then remove an random item from the buffer. The main logic here is to use semaphores \textbf{full} and \textbf{empty} to indicate whether the buffer is full or empty. Also mutex is needed for fear of simultaneous operations on the same buffer region. All this things will happen permanently, so we need to set a hyperparameter about how long it will take before the termination of the program.
+	\section{Execution Results And Snapshots}
+	The execution results are listed as follows:
+	\begin{figure}[H]
+	\centering 
+	\includegraphics[width=1.0\textwidth]{../imgs/5-1.png}
+	\caption{thread pool}
+	\end{figure}
+	\begin{figure}[H]
+		\centering 
+		\includegraphics[width=1.0\textwidth]{../imgs/5-2.png}
+		\caption{Producer-Consumer Algorithm}
+	\end{figure}
+	\section{Code Explanation}
+	First there are several major functions we will use about the semaphores and mutex.
+	\begin{lstlisting}
+		/* if the value of semaphore is larger than 0, we decrease by 1 and continues.
+			otherwise, we will wait until sem > 0 */
+		int sem_wait(sem_t *sem);
+		/* increase the value of sem by 1 and invoke threads which are waiting on this semaphore. */
+		int sem_post(sem_t *sem);
+		/* lock the mutex */
+		int pthread_mutex_lock(pthread_mutex_t *mutex);
+		/* unlock the mutex */
+		int pthread_mutex_unlock(pthread_mutex_t *mutex);
+	\end{lstlisting}
+	For part1, we show the code of the $worker$ function, which is the core of the algorithm.
+	\begin{lstlisting}
+	void *worker(void *param){
+	while(1){
+		/* must watch on whether the pool has been shutdown */
+		while(num_tasks == 0 && !is_shutdown){
+		printf("waiting for the task...\n");
+		sem_wait(&sem);
+		}
+		if(is_shutdown){
+			/* if the pool has been shut down, all the threads must exit */
+			printf("The pool has been shut down => threads all exiting...\n");
+			pthread_exit(0);
+		}
+		/* lock the mutex to avoid race condition */
+		pthread_mutex_lock(&mutex);
+		task = dequeue();
+		pthread_mutex_unlock(&mutex);
+		num_tasks--;
+		execute(task.function, task.data);
+		}
+	}
+	\end{lstlisting}
+	For part2, we take the code of the consumer as example to show the logic.
+	\begin{lstlisting}
+	void *consumer(void *param){
+		/* sleep for random time
+		* remove an item from the buffer */
+		int sleep_time;
+		int id = *(int *)param;
+		bufferItem item;
+		while(1){
+		/* avoid endless sleeping */
+		sleep_time = rand() % 10;
+		sleep(sleep_time);
+		item = removeItem();
+		printf("Consumer %d removes item %d.\n", id, item);
+		}
+	}
+	\end{lstlisting}
+\end{document}
