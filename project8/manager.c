@@ -52,6 +52,7 @@ int main(int argc, char *argv[]){
     signed char *buffer;
     /* buffer will be used to store the data from backing store */
     FILE *fp = fopen(argv[1], "r");
+    //FILE *fp_out = fopen(OUTPUT, "w");
     FILE *fp_back = fopen(BACKING_STORE, "rb");
     assert(fp && fp_back);
     init();
@@ -74,7 +75,7 @@ int main(int argc, char *argv[]){
             /* 1. read data from BACKING_STORE 
              * find the position */
             buffer = malloc(sizeof(char) * page_size);
-            fseek(fp_back, (page_idx-1) * page_size, SEEK_SET);
+            fseek(fp_back, (page_idx) * page_size, SEEK_SET);
             fread(buffer, sizeof(char), page_size, fp_back);
             /* 2. find a free frame and store the data */
             frame_idx = findFreeFrame();
@@ -150,7 +151,7 @@ void testInput(){
         page_idx = (address / page_size) % num_pages;
         frame_idx = page_table[page_idx];
         data = memory[frame_idx][offset];
-        fprintf(fp_out, "Virtual address: %d, Physical address: %d, Value: %d\n", address, (frame_idx - 1) * offset + offset, data);
+        fprintf(fp_out, "Virtual address: %d, Physical address: %d, Value: %d\n", address, (frame_idx) * frame_size + offset, data);
     }
     printf("Process finished! Output saved to => %s\n", OUTPUT);
 }

@@ -1,4 +1,4 @@
-## Brief Introduction For Kernel Module
+## Project1: Brief Introduction For Kernel Module
 > This part is about some basic knowedge about Linux Kernel Module  
 ### Features
 * *do not execute sequentially*(do not have a main function), use `init` and `exit` instead.
@@ -83,7 +83,7 @@ static void __exit simple_exit(void){
 * `sudo rmmod simple`(remove the kernel module)
 * Output is as follows(I add some extra logic here and you can refer to the source code)
 
-![1-1](../imgs/1-1.png)
+<center>![1-1](../imgs/1-1.png)</center>
 
 ### Part B: The /proc file system
 > &emsp;&emsp;The /proc file system is a “pseudo” file system that exists only in kernel memory and is used primarily for querying various kernel and per-process statistics. Here I only show how to use HZ and jiffies to get the time interval, source code is available at project1/seconds.c
@@ -163,4 +163,4 @@ MODULE_AUTHOR("Junjie Wang");
 ```
 &emsp;&emsp;Output is as follows:
 
-![1-2](../imgs/1-2.png)
+<center>![1-2](../imgs/1-2.png)</center>

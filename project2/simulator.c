@@ -21,7 +21,10 @@ void *preprocess(char *input);
 
 int main(){
     char *args[MAX_LINE/2 + 1];
+    /* store the history */
+
     char *input, *find, *redirect_path;
+    char *last_input;
     int i, last,  num_args, res, fd;
     /* initialization */
     /* flag for the while loop */
@@ -33,12 +36,13 @@ int main(){
     int pipe_idx = 0;
     pid_t pid;
 
-    /* memset */
     for(i=0;i<MAX_LINE/2+1;i++){
         args[i] = malloc(sizeof(char) * MAX_LINE);
     }
     input = malloc(sizeof(char) * MAX_LINE);
+    last_input = malloc(sizeof(char) * MAX_LINE);
     redirect_path = malloc(sizeof(char) * MAX_LINE);
+    last_input[0] = '\0';
 
     while(should_run){
         printf("osh>");
@@ -56,7 +60,14 @@ int main(){
             printf("Bye.\n");
             should_run = 0;
             break;
+        }else if(strcmp(input, "!!") == 0 && last_input[0] != '\0'){
+            strcpy(input, last_input);
+        }else if(strcmp(input, "!!") == 0 && last_input[0] == '\0'){
+            printf("No recent command!\n");
+            continue;
         }
+        strcpy(last_input, input);
+
         i = last = num_args = 0;
         in_redirect_flag = out_redirect_flag = 0;
         pipe_idx = pipe_flag = 0;
@@ -112,6 +123,7 @@ int main(){
             /* child process */
             char *valid_args[pipe_idx];
             char *pipe_args[num_args - pipe_idx + 1];
+            
             for(i=0;i<num_args;i++){
                 /* exclude the redirection char */
                 if(strcmp(args[i], "<") == 0 || strcmp(args[i], ">") == 0) break;
@@ -121,9 +133,11 @@ int main(){
                 /* store the pipe args (note that we skip the | char)*/
                 else if(i > pipe_idx)   pipe_args[i-pipe_idx-1] = args[i];
             }
+            
             /* add NULL to the end */
             valid_args[pipe_idx] = NULL;
             pipe_args[num_args - pipe_idx - 1] = NULL;
+            
             /* handle the redirection */
             if(out_redirect_flag){
                 fd = open(redirect_path, O_WRONLY | O_TRUNC | O_CREAT, 0644);

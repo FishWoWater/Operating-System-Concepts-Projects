@@ -1,0 +1,1 @@
+cmd_/home/dreamboy/OSProjects/project1/jiffies.ko := ld -r -m elf_x86_64  -z max-page-size=0x200000 -T ./scripts/module-common.lds  --build-id  -o /home/dreamboy/OSProjects/project1/jiffies.ko /home/dreamboy/OSProjects/project1/jiffies.o /home/dreamboy/OSProjects/project1/jiffies.mod.o ;  true

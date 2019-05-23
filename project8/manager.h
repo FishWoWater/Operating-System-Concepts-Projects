@@ -23,7 +23,7 @@
 #define PAGE_OFFSET_BITS 8
 #define PAGE_NUMBER_BITS 8
 #define FRAME_OFFSET_BITS 8
-#define FRAME_NUMBER_BITS 7
+#define FRAME_NUMBER_BITS 8
 
 /* the number of entries in TLB */
 #define TLB_ENTRIES 16

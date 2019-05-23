@@ -144,7 +144,7 @@ void handleRequest(char *buffer){
             /* using the best fit strategy 
              * maintain the min size which 
              * satisfies our condition */
-            int min_hole = max_size;
+            int min_hole = max_size + 1;
             struct node *best_node;
             while(p!=tail){
                block = p->block;
@@ -156,7 +156,7 @@ void handleRequest(char *buffer){
                 }
                 p = p->next;
             }
-            if(min_hole == max_size) fprintf(stderr, "Error! No space to allocate. You may try compaction first!\n");
+            if(min_hole == max_size + 1) fprintf(stderr, "Error! No space to allocate. You may try compaction first!\n");
             else splitNode(size, name, best_node);
             break;
         }
@@ -194,6 +194,7 @@ void handleRelease(char *buffer){
             /* simply set this type to 0 */
             block->type = 0;
             /* then check whether we can merge holes */
+            printf("test\n");
             mergeHole(p);
         }
         p = p->next;
@@ -207,19 +208,23 @@ void mergeHole(struct node *target){
     block = malloc(sizeof(Block));
     if(target->prev != head && target->prev->block->type == 0){
         /* merge current one with previous one */
+        printf("test1\n");
         block -> start = target -> prev -> block -> start;
         block -> end = target -> block -> end;
+        printf("%d %d\n", block->start, block->end);
         block -> type = 0;
         newNode -> block = block;
         target -> prev -> prev -> next = newNode;
         newNode -> prev = target -> prev -> prev;
         newNode -> next = target -> next;
         target -> next -> prev = newNode;
-        free(target);
-        free(target->prev);
-    } 
+        target = NULL;
+    }
+    if(target == NULL)  { target = newNode; newNode = malloc(sizeof(struct node)); }
+
     if(target->next != tail && target->next->block->type == 0){
         /* merge current one with following one */
+        printf("test1\n");
         block -> start = target -> block -> start;
         block -> end = target -> next -> block -> end;
         block -> type = 0;
@@ -228,8 +233,6 @@ void mergeHole(struct node *target){
         newNode -> next = target -> next -> next;
         target -> prev -> next = newNode;
         newNode -> prev = target -> prev;
-        free(target);
-        free(target->next);
     }
 }
 
