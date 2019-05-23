@@ -1,1 +1,0 @@
-cmd_/home/dreamboy/OSProjects/project2/part2/pid.ko := ld -r -m elf_x86_64  -z max-page-size=0x200000 -T ./scripts/module-common.lds  --build-id  -o /home/dreamboy/OSProjects/project2/part2/pid.ko /home/dreamboy/OSProjects/project2/part2/pid.o /home/dreamboy/OSProjects/project2/part2/pid.mod.o ;  true

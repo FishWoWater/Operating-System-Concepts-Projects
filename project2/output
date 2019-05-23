@@ -1,7 +1,11 @@
-Makefile
-output
-part2
-README.md
-simulator
-simulator.c
-simulator.o
+总用量 60
+drwxrwxr-x  3 dreamboy dreamboy  4096 5月  23 13:48 .
+drwxrwxr-x 14 dreamboy dreamboy  4096 5月  23 13:43 ..
+-rw-------  1 dreamboy dreamboy    84 5月  15 20:17 .gdb_history
+-rw-rw-r--  1 dreamboy dreamboy   236 5月  15 20:44 Makefile
+-rw-r--r--  1 dreamboy dreamboy     0 5月  23 14:26 output
+drwxrwxr-x  3 dreamboy dreamboy  4096 5月  23 10:08 part2
+-rw-rw-r--  1 dreamboy dreamboy  6583 5月  22 22:08 README.md
+-rwxrwxr-x  1 dreamboy dreamboy 13856 5月  23 13:48 simulator
+-rw-rw-r--  1 dreamboy dreamboy  8150 5月  23 12:33 simulator.c
+-rw-rw-r--  1 dreamboy dreamboy  8064 5月  23 13:48 simulator.o
