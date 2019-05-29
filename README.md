@@ -11,4 +11,4 @@
 * Project6: Banker's algorithm 
 * Project7: Contiguous Memory Allocation
 * Project8: Designing a Virtual Memory Manager
-* src: the official downloaed source code(based which you can implement your our algorithm)
+* src: the official downloaded source code(based which you can implement your own algorithm)
