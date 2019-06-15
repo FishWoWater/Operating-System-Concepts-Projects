@@ -5,3 +5,4 @@ peda*
 *.gz
 *.ko
 *.cmd
+*.zip

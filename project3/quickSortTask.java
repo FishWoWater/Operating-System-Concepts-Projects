@@ -84,7 +84,7 @@ public class quickSortTask extends RecursiveAction
 
         /* print the output */
         System.out.println("After sorting, input array is:");
-        for(int i=0;i<50;i++){
+        for(int i=0;i<SIZE;i++){
             System.out.print(array[i] + " ");
         }
         System.out.println("");

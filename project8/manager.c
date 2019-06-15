@@ -115,6 +115,19 @@ int main(int argc, char *argv[]){
             /* hit in the page table */
             frame_idx = page_table[page_idx];
             data = memory[frame_idx][offset];
+            
+            min_lru = MAX_LRU;
+            min_lru_idx = 0;
+            for(i=0;i<TLB_ENTRIES;i++){
+                if(tlb_table[i].lru < min_lru){
+                    min_lru = tlb_table[i].lru;
+                    min_lru_idx = i;
+                }
+            }
+            tlb_table[min_lru_idx].page_idx = page_idx;
+            tlb_table[min_lru_idx].frame_idx = frame_idx;
+            updateLRUTLB(page_idx);
+            
         }
         num_addresses++;
     }

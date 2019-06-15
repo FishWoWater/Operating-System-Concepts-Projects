@@ -206,7 +206,9 @@ int checkSafe(int *finished){
     int customerIndex = findSomeCustomer(finished);
     if(customerIndex == -1)   return 0;
     else{
-        releaseResources(customerIndex, allocation[customerIndex]);
+        int *strategy = malloc(sizeof(int) * num_resources);
+        memcpy(strategy, allocation[customerIndex], sizeof(int) * num_resources);
+        releaseResources(customerIndex, strategy);
         finished[customerIndex] = 1;
         checkSafe(finished);
     }
@@ -277,7 +279,7 @@ void initArrays(){
         need[i] = malloc(sizeof(int) * num_resources);
         memset(allocation[i], 0, num_resources);
     }
-    memset(available, 0, num_customers);
+    memset(available, 0, num_resources);
 
     /* move back to the beginning */
     fseek(fp, 0, SEEK_SET);
