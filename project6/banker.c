@@ -46,6 +46,7 @@ int num_resources = 0;
 void initArrays();
 char *preprocess(char *buffer);
 void getResources(int argc, char *argv[]);
+int judgeLegal(int customerIndex, int *strategy);
 void printArrays();
 void handleReleases(char *buffer);
 int handleRequest(char *buffer);
@@ -118,6 +119,11 @@ int handleRequest(char *buffer){
     int *arr = parseLine(buffer+3);
     int customerIndex = arr[0];
 
+    int legal_flag = judgeLegal(customerIndex, arr+1);
+    if(!legal_flag){
+        printf("illegal input! Check your need!\n");
+        return 0;
+    }
     allocateResources(customerIndex, arr+1);
 
     if(!checkSafeWrapper()){
@@ -131,15 +137,26 @@ int handleRequest(char *buffer){
     return flag;
 }
 
+/* check whether the resources requested exceed the need limitation */
+int judgeLegal(int customerIndex, int *strategy){
+    for(int i=0;i<num_resources;i++){
+        if(need[customerIndex][i]<strategy[i])
+            return 0;
+    }
+    return 1;
+}
+
 /* allocate the resources to a specific customer */
 void allocateResources(int customerIndex, int *strategy){
+    /* Depreciated to match with TA ...
     for(int i=0;i<num_resources;i++){
-        if(maximum[customerIndex][i]<strategy[i]){
+        if(need[customerIndex][i]<strategy[i]){
             printf("Warning: Your allocation exceeds tha maximum value you need!\n");
             printf("The allocation is automatically set to the maximum matrix. \n");
-            strategy[i] = maximum[customerIndex][i];
+            strategy[i] = need[customerIndex][i];
         }
     }
+    */
     for(int i=0;i<num_resources;i++){
         allocation[customerIndex][i] += strategy[i];
         need[customerIndex][i] -= strategy[i];
